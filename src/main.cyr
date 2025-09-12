@@ -1,5 +1,6 @@
 import std::libc;
+import engine;
 
 func main() {
-	libc::printf("Hello, Cyrus!\n");
+	libc::fprintf(libc::stderr, "Hello, Cyrus!\n");
 }

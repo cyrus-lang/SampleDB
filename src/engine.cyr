@@ -1,0 +1,51 @@
+import std::libc;
+
+public enum DataType {
+    Int,
+    Text
+}
+
+public union ValueData {
+    int_value: int;
+    text_value: char*;
+}
+
+public struct Value {
+    public ty: DataType;
+    public data: ValueData;
+}
+
+public struct Row { 
+    public values: Value*;
+}
+
+public struct Column {
+    public name: char*;
+}
+
+public struct Table {
+    public name: char*;
+    public rows: Row**;
+    public schema: Column*;
+    public column_count: size_t;
+    public row_count: size_t;
+    public capacity: size_t;
+
+    public func create(name: const char*, schema: Column*, column_count: size_t) Table* {
+        return null;
+    }
+
+    public func free(&self) {
+        // libc::printf("aa\n");
+        // libc::fprintf(libc::stderr, "not implemented yet.\n");
+        // libc::exit(1);
+    }
+
+    public func insert(&self, values: Value*) int {
+        return -1;
+    }
+
+    public func print(&self) {
+
+    }
+}
