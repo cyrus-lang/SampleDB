@@ -1,0 +1,5 @@
+import std::libc;
+
+func main() {
+	libc::printf("Hello, Cyrus!\n");
+}
