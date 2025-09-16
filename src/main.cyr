@@ -1,6 +1,10 @@
-import std::libc;
+import std::libc{printf};
 import engine;
+import utils;
 
 func main() {
-	libc::fprintf(libc::stderr, "Hello, Cyrus!\n");
+	#table: engine::Table* = engine::Table.create("my_table", null, 0);
+	if (!(table)) {
+		utils::panic("failed to create table.");
+	} 
 }

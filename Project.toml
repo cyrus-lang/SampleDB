@@ -1,8 +1,7 @@
 [project]
 name = "sample-db"
-version = "0.0.1"
-type = "executable"
-authors = ["<John Doe> john_doe@mail.com"]
+version = "0.1.0"
+authors = ["<Taha Dostifam> mr.tahadostifam@gmail.com"]
 
 [dependencies]
 libraries = []
@@ -12,5 +11,5 @@ library_path = []
 cpu = "generic"
 optimize = "o1"
 sources = ["src/*"]
-version = "0.1.0"
+version = "0.0.1"
 build_dir = "./build"

@@ -1,4 +1,9 @@
-import std::libc;
+import std::libc{printf, malloc, strncpy, free};
+import utils;
+
+INITIAL_TABLE_CAPACITY: const int = 16;
+MAX_TABLE_NAME_LEN: const int = 64;
+MAX_COL_NAME_LEN: const int = 64;
 
 public enum DataType {
     Int,
@@ -20,32 +25,55 @@ public struct Row {
 }
 
 public struct Column {
-    public name: char*;
+    public name: char[MAX_COL_NAME_LEN];
 }
 
 public struct Table {
-    public name: char*;
+    public name: char[MAX_TABLE_NAME_LEN];
     public rows: Row**;
     public schema: Column*;
-    public column_count: size_t;
-    public row_count: size_t;
-    public capacity: size_t;
+    public column_count: int;
+    public row_count: int;
+    public capacity: int;
 
-    public func create(name: const char*, schema: Column*, column_count: size_t) Table* {
-        return null;
+    public func create(name: const char*, schema: Column*, column_count: int) Table* {
+        if (!name || !schema || column_count == 0) {
+            return null;
+        }
+        
+        #table: Table* = malloc(sizeof(Table));
+        if (!table) {
+            utils::panic("failed to allocate memory for table.");
+        }
+
+        strncpy(table->name, name, MAX_TABLE_NAME_LEN);
+        (table->name)[MAX_TABLE_NAME_LEN - 1] = '\0'; // FIXME 
+
+        table->schema = schema;
+        table->column_count = column_count;
+        table->capacity = INITIAL_TABLE_CAPACITY;
+
+        table->schema = cast(Column*, malloc(sizeof(Column) * cast(size_t, column_count)));
+        if (!table->schema) {
+            utils::panic("failed to allocate memory for table schema.");
+            free(table);
+            return null;
+        }
+
+        return table;
     }
 
-    public func free(&self) {
-        // libc::printf("aa\n");
-        // libc::fprintf(libc::stderr, "not implemented yet.\n");
-        // libc::exit(1);
-    }
+    // public func free(&self) {
+    //     // libc::printf("aa\n");
+    //     // libc::fprintf(libc::stderr, "not implemented yet.\n");
+    //     // libc::exit(1);
+    // }
 
-    public func insert(&self, values: Value*) int {
-        return -1;
-    }
+    // public func insert(&self, values: Value*) int {
+    //     return -1;
+    // }
 
-    public func print(&self) {
+    // public func print(&self) {
 
-    }
+    // }
 }
