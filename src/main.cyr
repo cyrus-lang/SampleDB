@@ -4,7 +4,9 @@ import utils;
 
 func main() {
 	#table: engine::Table* = engine::Table.create("my_table", null, 0);
-	if (!(table)) {
+	if (!table) {
 		utils::panic("failed to create table.");
 	} 
+
+	table->free();
 }

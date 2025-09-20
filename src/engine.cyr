@@ -1,9 +1,9 @@
-import std::libc{printf, malloc, strncpy, free};
+import std::libc{printf, fprintf, malloc, strncpy, free, realloc, stderr};
 import utils;
 
-INITIAL_TABLE_CAPACITY: const int = 16;
-MAX_TABLE_NAME_LEN: const int = 64;
-MAX_COL_NAME_LEN: const int = 64;
+public INITIAL_TABLE_CAPACITY: const size_t = 16;
+public MAX_TABLE_NAME_LEN: const int = 64;
+public MAX_COL_NAME_LEN: const int = 64;
 
 public enum DataType {
     Int,
@@ -34,12 +34,12 @@ public struct Table {
     public schema: Column*;
     public column_count: int;
     public row_count: int;
-    public capacity: int;
+    public capacity: size_t;
 
     public func create(name: const char*, schema: Column*, column_count: int) Table* {
-        if (!name || !schema || column_count == 0) {
-            return null;
-        }
+        // if (!name || !schema || column_count == 0) {
+        //     return null;
+        // }
         
         #table: Table* = malloc(sizeof(Table));
         if (!table) {
@@ -47,7 +47,7 @@ public struct Table {
         }
 
         strncpy(table->name, name, MAX_TABLE_NAME_LEN);
-        (table->name)[MAX_TABLE_NAME_LEN - 1] = '\0'; // FIXME 
+        table->name[MAX_TABLE_NAME_LEN - 1] = '\0'; 
 
         table->schema = schema;
         table->column_count = column_count;
@@ -60,20 +60,82 @@ public struct Table {
             return null;
         }
 
-        return table;
+        table->rows = cast(Row**, malloc(table->capacity * sizeof(Row*)));
+        if (!table->rows) {
+            utils::panic("failed to allocate memory for table rows.");
+            free(table->schema);
+            free(table);
+            return null;
+        }
+
+        return null;
     }
 
-    // public func free(&self) {
-    //     // libc::printf("aa\n");
-    //     // libc::fprintf(libc::stderr, "not implemented yet.\n");
-    //     // libc::exit(1);
-    // }
+    public func free(&self) {
+        free(self->rows);
+        free(self->schema);
+        free(self);
+    }
 
-    // public func insert(&self, values: Value*) int {
-    //     return -1;
-    // }
+    public func insert(&self, values: Value*) int {
+        // if (self->row_count >= cast(int, self->capacity)) {
+        //     // double the capacity
+        //     #new_capacity = cast(int, self->capacity) * 2;
+            
+        //     self->resize(0);
 
-    // public func print(&self) {
+        //     if (resize_result != 0) {
+        //         utils::panic("failed to resize table, insertion aborted.");
+        //         return -1;
+        //     }
+        // }
 
-    // }
+        #new_row = cast(Row*, malloc(sizeof(Row)));
+        if (!new_row) {
+            utils::panic("failed to allocate memory for new row.");
+            return -1;
+        }
+
+        new_row->values = cast(Value*, malloc(sizeof(Value) * cast(size_t, self->column_count)));
+        if (!new_row->values) {
+            utils::panic("failed to allocate memory for new row values.");
+            free(new_row);
+            return -1;
+        }
+
+        for (#i: int = 0; i < self->column_count; i++) {
+            if (values[i].ty != DataType.Text) {
+                fprintf(stderr, "Schema mismatch at column %zu. Insertion failed!\n", i);
+                free(new_row->values);
+                free(new_row);
+                return -1;
+            }
+
+            // // #value_type = values[i].ty;
+            // (new_row->values[i]).ty;
+            
+            // new_row->values[i].ty;
+        }
+
+        return 0;
+    }
+
+    public func print(&self) {
+        utils::panic("not implemented yet.");
+    }
+
+    func resize(&self, new_capacity: size_t) int {
+        // printf("Resizing table %s from %d to %d\n", self->name, self->capacity, new_capacity);
+
+        // #new_rows: Row** = cast(Row**, realloc(self->rows, new_capacity * sizeof(Row*)));
+        // if (!new_rows) {
+        //     utils::panic("failed to resize table rows.");
+        //     return -1;
+        // }
+
+        // self->rows = new_rows;
+        // self->capacity = new_capacity;
+
+        return 0;
+    }
 }
