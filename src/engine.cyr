@@ -1,4 +1,8 @@
-import std::libc{printf, fprintf, malloc, strncpy, free, realloc, stderr};
+import std::libc{
+    printf, fprintf, malloc,
+    strncpy, free, realloc,
+    stderr, strdup
+};
 import utils;
 
 public INITIAL_TABLE_CAPACITY: const size_t = 16;
@@ -26,6 +30,7 @@ public struct Row {
 
 public struct Column {
     public name: char[MAX_COL_NAME_LEN];
+    public ty: DataType;
 }
 
 public struct Table {
@@ -37,9 +42,9 @@ public struct Table {
     public capacity: size_t;
 
     public func create(name: const char*, schema: Column*, column_count: int) Table* {
-        // if (!name || !schema || column_count == 0) {
-        //     return null;
-        // }
+        if (!name || !schema || column_count == 0) {
+            return null;
+        }
         
         #table: Table* = malloc(sizeof(Table));
         if (!table) {
@@ -78,17 +83,17 @@ public struct Table {
     }
 
     public func insert(&self, values: Value*) int {
-        // if (self->row_count >= cast(int, self->capacity)) {
-        //     // double the capacity
-        //     #new_capacity = cast(int, self->capacity) * 2;
-            
-        //     self->resize(0);
+        // check if we need to resize the table
+        if (self->row_count >= cast(int, self->capacity)) {
+            // double the capacity
+            #new_capacity = cast(int, self->capacity) * 2;
+            #resize_result = self->resize(new_capacity);
 
-        //     if (resize_result != 0) {
-        //         utils::panic("failed to resize table, insertion aborted.");
-        //         return -1;
-        //     }
-        // }
+            if (resize_result != 0) {
+                utils::panic("failed to resize table, insertion aborted.");
+                return -1;
+            }
+        }
 
         #new_row = cast(Row*, malloc(sizeof(Row)));
         if (!new_row) {
@@ -104,18 +109,38 @@ public struct Table {
         }
 
         for (#i: int = 0; i < self->column_count; i++) {
-            if (values[i].ty != DataType.Text) {
-                fprintf(stderr, "Schema mismatch at column %zu. Insertion failed!\n", i);
+            if (values[i].ty != self->schema[i].ty) {
+                fprintf(stderr, "schema mismatch at column %zu. Insertion failed!\n", i);
                 free(new_row->values);
                 free(new_row);
                 return -1;
             }
 
-            // // #value_type = values[i].ty;
-            // (new_row->values[i]).ty;
+            new_row->values[i].ty = values[i].ty;
             
-            // new_row->values[i].ty;
+            // duplicate string value
+            if (values[i].ty == DataType.Text) {
+                new_row->values[i].data.text_value = strdup(values[i].data.text_value);
+                
+                if (!new_row->values[i].data.text_value) {
+                    utils::panic("failed to duplicate string for new row.");
+                    for (#j: int = 0; j < i; j++) {
+                        // cleanup partially created row
+                        if (new_row->values[j].ty == DataType.Text) {
+                            free(new_row->values[j].data.text_value);
+                        }
+                    }
+                    free(new_row->values);
+                    free(new_row);
+                    return -1;
+                }
+            } else {
+                new_row->values[i].data = values[i].data;
+            }
         }
+
+        self->rows[self->row_count] = new_row;
+        self->row_count++;
 
         return 0;
     }
@@ -125,16 +150,16 @@ public struct Table {
     }
 
     func resize(&self, new_capacity: size_t) int {
-        // printf("Resizing table %s from %d to %d\n", self->name, self->capacity, new_capacity);
+        printf("Resizing table %s from %d to %d\n", self->name, self->capacity, new_capacity);
 
-        // #new_rows: Row** = cast(Row**, realloc(self->rows, new_capacity * sizeof(Row*)));
-        // if (!new_rows) {
-        //     utils::panic("failed to resize table rows.");
-        //     return -1;
-        // }
+        #new_rows: Row** = cast(Row**, realloc(self->rows, new_capacity * sizeof(Row*)));
+        if (!new_rows) {
+            utils::panic("failed to resize table rows.");
+            return -1;
+        }
 
-        // self->rows = new_rows;
-        // self->capacity = new_capacity;
+        self->rows = new_rows;
+        self->capacity = new_capacity;
 
         return 0;
     }
