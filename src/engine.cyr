@@ -179,17 +179,26 @@ public struct Table {
             for (#x: size_t = 0; x < self->column_count; x++) {
                 #value = row->values[x];
 
-                switch (value.ty) {
-                    case .Int:
-                        printf("%-20d", value.data.int_value);
-                        break;
-                    case .Text:
-                        printf("%-20s", value.data.text_value);
-                        break;
-                    default:
-                        printf("%-20s", "[UNKNOWN TYPE]");
-                        break;
+                if (value.ty == DataType.Text) {
+                    printf("%-20s", value.data.text_value);
+                } 
+
+                if (value.ty == DataType.Int) {
+                    printf("%-20d", value.data.int_value);
                 }
+
+                // FIXME Consider to use switch instead of if statements.
+                // switch (value.ty) {
+                //     case .Int:
+                //         printf("%-20d", value.data.int_value);
+                //         break;
+                //     case .Text:
+                //         printf("%-20s", value.data.text_value);
+                //         break;
+                //     default:
+                //         printf("%-20s", "[UNKNOWN TYPE]");
+                //         break;
+                // }
             }
 
             printf("\n");
