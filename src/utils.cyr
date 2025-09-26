@@ -1,6 +1,0 @@
-import std::libc;
-
-public func panic(msg: const char*) {
-    libc::fprintf(libc::stderr, "panic: %s\n", msg);
-    libc::exit(1);
-}

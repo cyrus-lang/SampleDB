@@ -1,12 +1,24 @@
 import std::libc{printf};
+import std::core{panic};
 import engine;
-import utils;
 
 func main() {
-	#table: engine::Table* = engine::Table.create("my_table", null, 0);
+	#columns = engine::Column[3] {
+		engine::Column { name: "id", ty: engine::DataType.Text },
+		engine::Column { name: "name", ty: engine::DataType.Int },
+		engine::Column { name: "age", ty: engine::DataType.Int },
+	};
+
+	#column_count: size_t = sizeof(columns) / sizeof(columns[0]);
+
+	#table_name = "users";
+	#table: engine::Table* = engine::Table.create(table_name, &columns, 3);
 	if (!table) {
-		utils::panic("failed to create table.");
+		panic("failed to create table.");
+		return;
 	} 
 
+	printf("Successfully created table.\n\n");
+	// table->print();
 	table->free();
 }

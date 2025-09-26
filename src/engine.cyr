@@ -1,13 +1,13 @@
 import std::libc{
     printf, fprintf, malloc,
     strncpy, free, realloc,
-    stderr, strdup
+    stderr, strdup, memcpy
 };
-import utils;
+import std::core{panic};
 
-public INITIAL_TABLE_CAPACITY: const size_t = 16;
-public MAX_TABLE_NAME_LEN: const int = 64;
-public MAX_COL_NAME_LEN: const int = 64;
+MAX_TABLE_NAME_LEN: const size_t = 64;
+MAX_COLUMN_NAME_LEN: const size_t = 64;
+INITIAL_TABLE_CAPACITY: const size_t = 16;
 
 public enum DataType {
     Int,
@@ -29,56 +29,83 @@ public struct Row {
 }
 
 public struct Column {
-    public name: char[MAX_COL_NAME_LEN];
+    public name: char*;
     public ty: DataType;
 }
 
 public struct Table {
-    public name: char[MAX_TABLE_NAME_LEN];
+    public name: char*;
     public rows: Row**;
     public schema: Column*;
-    public column_count: int;
-    public row_count: int;
+    public column_count: size_t;
     public capacity: size_t;
+    public row_count: int;
 
-    public func create(name: const char*, schema: Column*, column_count: int) Table* {
+    public func create(name: char*, schema: Column*, column_count: size_t) Table* {
         if (!name || !schema || column_count == 0) {
             return null;
         }
         
         #table: Table* = malloc(sizeof(Table));
         if (!table) {
-            utils::panic("failed to allocate memory for table.");
+            panic("failed to allocate memory for table.");
         }
 
-        strncpy(table->name, name, MAX_TABLE_NAME_LEN);
-        table->name[MAX_TABLE_NAME_LEN - 1] = '\0'; 
+        table->name = malloc(MAX_TABLE_NAME_LEN);
+        if (!table->name) {
+            panic("failed to allocate memory for table name");
+            free(table);
+            return null;
+        }
+        strncpy(table->name, name, MAX_TABLE_NAME_LEN - 1);
+        table->name[MAX_TABLE_NAME_LEN - 1] = '\0';
 
-        table->schema = schema;
         table->column_count = column_count;
         table->capacity = INITIAL_TABLE_CAPACITY;
 
         table->schema = cast(Column*, malloc(sizeof(Column) * cast(size_t, column_count)));
         if (!table->schema) {
-            utils::panic("failed to allocate memory for table schema.");
+            panic("failed to allocate memory for table schema.");
             free(table);
             return null;
+        }  
+        
+        for (#i: size_t = 0; i < column_count; i++) {
+            table->schema[i].name = malloc(MAX_COLUMN_NAME_LEN);
+            if (!table->schema[i].name) {
+                panic("failed to allocate memory for column name");
+                return null;
+            }
+
+            if (!schema[i].name) {
+                panic("column name is null and cannot be copied into allocated string.");
+            }
+            
+            strncpy(table->schema[i].name, schema[i].name, MAX_COLUMN_NAME_LEN - 1);
+            table->schema[i].name[MAX_COLUMN_NAME_LEN - 1] = '\0';
+
+            table->schema[i].ty = schema[i].ty; 
         }
 
         table->rows = cast(Row**, malloc(table->capacity * sizeof(Row*)));
         if (!table->rows) {
-            utils::panic("failed to allocate memory for table rows.");
+            panic("failed to allocate memory for table rows.");
             free(table->schema);
             free(table);
             return null;
         }
 
-        return null;
+        return table;
     }
 
     public func free(&self) {
+        for (#i: size_t = 0; i < self->column_count; i++) {
+            free(self->schema[i].name);
+        }
+
         free(self->rows);
         free(self->schema);
+        free(self->name);
         free(self);
     }
 
@@ -86,29 +113,29 @@ public struct Table {
         // check if we need to resize the table
         if (self->row_count >= cast(int, self->capacity)) {
             // double the capacity
-            #new_capacity = cast(int, self->capacity) * 2;
+            #new_capacity = self->capacity * 2;
             #resize_result = self->resize(new_capacity);
 
             if (resize_result != 0) {
-                utils::panic("failed to resize table, insertion aborted.");
+                panic("failed to resize table, insertion aborted.");
                 return -1;
             }
         }
 
         #new_row = cast(Row*, malloc(sizeof(Row)));
         if (!new_row) {
-            utils::panic("failed to allocate memory for new row.");
+            panic("failed to allocate memory for new row.");
             return -1;
         }
 
         new_row->values = cast(Value*, malloc(sizeof(Value) * cast(size_t, self->column_count)));
         if (!new_row->values) {
-            utils::panic("failed to allocate memory for new row values.");
+            panic("failed to allocate memory for new row values.");
             free(new_row);
             return -1;
         }
 
-        for (#i: int = 0; i < self->column_count; i++) {
+        for (#i: size_t = 0; i < self->column_count; i++) {
             if (values[i].ty != self->schema[i].ty) {
                 fprintf(stderr, "schema mismatch at column %zu. Insertion failed!\n", i);
                 free(new_row->values);
@@ -117,26 +144,7 @@ public struct Table {
             }
 
             new_row->values[i].ty = values[i].ty;
-            
-            // duplicate string value
-            if (values[i].ty == DataType.Text) {
-                new_row->values[i].data.text_value = strdup(values[i].data.text_value);
-                
-                if (!new_row->values[i].data.text_value) {
-                    utils::panic("failed to duplicate string for new row.");
-                    for (#j: int = 0; j < i; j++) {
-                        // cleanup partially created row
-                        if (new_row->values[j].ty == DataType.Text) {
-                            free(new_row->values[j].data.text_value);
-                        }
-                    }
-                    free(new_row->values);
-                    free(new_row);
-                    return -1;
-                }
-            } else {
-                new_row->values[i].data = values[i].data;
-            }
+            new_row->values[i].data = values[i].data;
         }
 
         self->rows[self->row_count] = new_row;
@@ -146,7 +154,11 @@ public struct Table {
     }
 
     public func print(&self) {
-        utils::panic("not implemented yet.");
+        printf("Table: %s\n", self->name);
+
+        // for (#i: size_t = 0; i < 3; i++) {
+        //     printf("%s\t", self->schema[i].name);
+        // }
     }
 
     func resize(&self, new_capacity: size_t) int {
@@ -154,7 +166,7 @@ public struct Table {
 
         #new_rows: Row** = cast(Row**, realloc(self->rows, new_capacity * sizeof(Row*)));
         if (!new_rows) {
-            utils::panic("failed to resize table rows.");
+            panic("failed to resize table rows.");
             return -1;
         }
 
