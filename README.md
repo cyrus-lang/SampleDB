@@ -11,7 +11,11 @@ Cyrus is still under active development and not yet stable. Expect frequent chan
 
 ## Setup
 
-Coming soon...
+To build the project, run:
+
+```sh
+cyrus build -o ./sampledb
+```
 
 ## To-Do / Roadmap
 
