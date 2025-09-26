@@ -4,21 +4,27 @@ import engine;
 
 func main() {
 	#columns = engine::Column[3] {
-		engine::Column { name: "id", ty: engine::DataType.Text },
-		engine::Column { name: "name", ty: engine::DataType.Int },
+		engine::Column { name: "id", ty: engine::DataType.Int },
+		engine::Column { name: "name", ty: engine::DataType.Text },
 		engine::Column { name: "age", ty: engine::DataType.Int },
 	};
-
 	#column_count: size_t = sizeof(columns) / sizeof(columns[0]);
 
 	#table_name = "users";
-	#table: engine::Table* = engine::Table.create(table_name, &columns, 3);
+	#table: engine::Table* = engine::Table.create(table_name, &columns, column_count);
 	if (!table) {
 		panic("failed to create table.");
 		return;
 	} 
 
+	#values = engine::Value[3] {
+		engine::Value { ty: engine::DataType.Int, data: engine::ValueData { int_value: 0 } },
+		engine::Value { ty: engine::DataType.Text, data: engine::ValueData { text_value: "Taha" } },
+		engine::Value { ty: engine::DataType.Int, data: engine::ValueData { int_value: 18 } }
+	};
+	table->insert(&values);
+
 	printf("Successfully created table.\n\n");
-	// table->print();
+	table->print();
 	table->free();
 }

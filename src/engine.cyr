@@ -39,7 +39,7 @@ public struct Table {
     public schema: Column*;
     public column_count: size_t;
     public capacity: size_t;
-    public row_count: int;
+    public row_count: size_t;
 
     public func create(name: char*, schema: Column*, column_count: size_t) Table* {
         if (!name || !schema || column_count == 0) {
@@ -111,7 +111,7 @@ public struct Table {
 
     public func insert(&self, values: Value*) int {
         // check if we need to resize the table
-        if (self->row_count >= cast(int, self->capacity)) {
+        if (self->row_count >= self->capacity) {
             // double the capacity
             #new_capacity = self->capacity * 2;
             #resize_result = self->resize(new_capacity);
@@ -156,13 +156,48 @@ public struct Table {
     public func print(&self) {
         printf("Table: %s\n", self->name);
 
-        // for (#i: size_t = 0; i < 3; i++) {
-        //     printf("%s\t", self->schema[i].name);
-        // }
+        // header
+
+        for (#i: size_t = 0; i < 3; i++) {
+            printf("%-20s", self->schema[i].name);
+        }
+
+        printf("\n");
+
+        for (#j: size_t = 0; j < self->column_count * 20; j++)
+        {
+            printf("=");
+        }
+
+        printf("\n");
+
+        // rows
+
+        for (#z: size_t = 0; z < self->row_count; z++) {
+            #row = self->rows[z];
+
+            for (#x: size_t = 0; x < self->column_count; x++) {
+                #value = row->values[x];
+
+                switch (value.ty) {
+                    case .Int:
+                        printf("%-20d", value.data.int_value);
+                        break;
+                    case .Text:
+                        printf("%-20s", value.data.text_value);
+                        break;
+                    default:
+                        printf("%-20s", "[UNKNOWN TYPE]");
+                        break;
+                }
+            }
+
+            printf("\n");
+        }
     }
 
     func resize(&self, new_capacity: size_t) int {
-        printf("Resizing table %s from %d to %d\n", self->name, self->capacity, new_capacity);
+        printf("resizing table %s from %d to %d\n", self->name, self->capacity, new_capacity);
 
         #new_rows: Row** = cast(Row**, realloc(self->rows, new_capacity * sizeof(Row*)));
         if (!new_rows) {
