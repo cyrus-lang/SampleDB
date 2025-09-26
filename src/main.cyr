@@ -2,7 +2,7 @@ import std::libc{printf};
 import std::core{panic};
 import engine;
 
-func main() {
+fn main() {
 	#columns = engine::Column[3] {
 		engine::Column { name: "id", ty: engine::DataType.Int },
 		engine::Column { name: "name", ty: engine::DataType.Text },
@@ -13,6 +13,7 @@ func main() {
 	#table_name = "users";
 	#table: engine::Table* = engine::Table.create(table_name, &columns, column_count);
 	if (!table) {
+		panic("failed to create table.");
 		panic("failed to create table.");
 		return;
 	} 
