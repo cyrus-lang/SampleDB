@@ -11,5 +11,5 @@ library_path = []
 cpu = "generic"
 optimize = "o1"
 sources = ["src/*"]
-version = "0.0.1"
+version = "0.0.2"
 build_dir = "./build"
